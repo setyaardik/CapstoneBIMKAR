@@ -1,53 +1,55 @@
-@props(['title', 'date', 'location', 'price', 'image', 'href' => null])
+@props(['title', 'date', 'location', 'price', 'image', 'href' => '#'])
 
 @php
-// Format Indonesian price
-$formattedPrice = $price ? 'Rp ' . number_format($price, 0, ',', '.') : 'Harga tidak tersedia';
+$formattedPrice = $price ? 'Rp ' . number_format($price, 0, ',', '.') : 'Gratis';
 
 $formattedDate = $date
-? \Carbon\Carbon::parse($date)->locale('id')->translatedFormat('d F Y, H:i')
-: 'Tanggal tidak tersedia';
+    ? \Carbon\Carbon::parse($date)->locale('id')->translatedFormat('d M Y • H:i')
+    : 'Tanggal belum tersedia';
 
-// Safe image URL: use external URL if provided, otherwise use asset (storage path)
 $imageUrl = $image
-? (filter_var($image, FILTER_VALIDATE_URL)
-? $image
-: asset('images/events/' . $image))
-: asset('images/konser.jpeg');
-
+    ? (filter_var($image, FILTER_VALIDATE_URL)
+        ? $image
+        : asset('images/events/' . $image))
+    : asset('images/konser.jpeg');
 @endphp
 
-<div class="group bg-white rounded-2xl overflow-hidden shadow hover:shadow-xl transition-all">
-    <div class="relative h-52 overflow-hidden">
-        <img src="{{ $imageUrl }}"
-             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+<a href="{{ $href }}" class="group block">
+    <div class="group bg-white text-gray-900 rounded-2xl overflow-hidden shadow hover:shadow-xl transition-all">
 
-        <span class="absolute top-3 right-3 bg-blue-600 text-white text-xs px-3 py-1 rounded-full">
-            Event
-        </span>
-    </div>
+        {{-- IMAGE --}}
+        <div class="relative h-52 overflow-hidden">
+            <img src="{{ $imageUrl }}"
+                 class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
 
-    <div class="p-5">
-        <h3 class="font-bold text-lg line-clamp-2">
-            {{ $title }}
-        </h3>
-
-        <p class="text-sm text-gray-500 mt-2">
-            📅 {{ $formattedDate }}
-        </p>
-
-        <p class="text-sm text-gray-500">
-            📍 {{ $location }}
-        </p>
-
-        <div class="mt-4 flex justify-between items-center">
-            <span class="font-extrabold text-blue-700 text-lg">
-                {{ $formattedPrice }}
+            <span class="absolute top-3 left-3 bg-blue-600 text-white text-xs px-3 py-1 rounded-full">
+                EVENT
             </span>
+        </div>
 
-            <button class="btn btn-sm btn-primary">
-                Beli
-            </button>
+        {{-- CONTENT --}}
+        <div class="p-5 space-y-2">
+            <h3 class="font-bold text-lg line-clamp-2 text-gray-900">
+                {{ $title }}
+            </h3>
+
+            <p class="text-sm text-slate-500">
+                📅 {{ $formattedDate }}
+            </p>
+
+            <p class="text-sm text-slate-500">
+                📍 {{ $location }}
+            </p>
+
+            <div class="pt-4 flex items-center justify-between">
+                <span class="font-extrabold text-blue-700 text-lg">
+                    {{ $formattedPrice }}
+                </span>
+
+                <span class="text-sm font-semibold text-blue-600 group-hover:underline">
+                    Lihat →
+                </span>
+            </div>
         </div>
     </div>
-</div>
+</a>
