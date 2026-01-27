@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\Kategori;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class EventController extends Controller
 {
@@ -31,29 +32,31 @@ class EventController extends Controller
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-    {
-        $validatedData = $request->validate([
-            'judul' => 'required|string|max:255',
-            'deskripsi' => 'required|string',
-            'tanggal_waktu' => 'required|date',
-            'lokasi' => 'required|string|max:255',
-            'kategori_id' => 'required|exists:kategoris,id',
-            'gambar' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-        ]);
+{
+    $validatedData = $request->validate([
+        'judul' => 'required|string|max:255',
+        'deskripsi' => 'required|string',
+        'tanggal_waktu' => 'required|date',
+        'lokasi' => 'required|string|max:255',
+        'kategori_id' => 'required|exists:kategoris,id',
+        'gambar' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+    ]);
 
-        // Handle file upload
-        if ($request->hasFile('gambar')) {
-            $imageName = time().'.'.$request->gambar->extension();
-            $request->gambar->move(public_path('images/events'), $imageName);
-            $validatedData['gambar'] = $imageName;
-        }
-
-        $validatedData['user_id'] = auth()->user()->id ?? null;
-
-        Event::create($validatedData);
-
-        return redirect()->route('admin.events.index')->with('success', 'Event berhasil ditambahkan.');
+    if ($request->hasFile('gambar')) {
+        $path = $request->file('gambar')->store('events', 'public');
+        // hasil: events/konser_rock.jpg
+        $validatedData['gambar'] = $path;
     }
+
+    $validatedData['user_id'] = auth()->id();
+
+    Event::create($validatedData);
+
+    return redirect()
+        ->route('admin.events.index')
+        ->with('success', 'Event berhasil ditambahkan.');
+}
+
 
     /**
      * Display the specified resource.
@@ -81,33 +84,36 @@ class EventController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
-    {
-        try {
-            $event = Event::findOrFail($id);
+{
+    $event = Event::findOrFail($id);
 
-            $validatedData = $request->validate([
-                'judul' => 'required|string|max:255',
-                'deskripsi' => 'required|string',
-                'tanggal_waktu' => 'required|date',
-                'lokasi' => 'required|string|max:255',
-                'kategori_id' => 'required|exists:kategoris,id',
-                'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            ]);
+    $validatedData = $request->validate([
+        'judul' => 'required|string|max:255',
+        'deskripsi' => 'required|string',
+        'tanggal_waktu' => 'required|date',
+        'lokasi' => 'required|string|max:255',
+        'kategori_id' => 'required|exists:kategoris,id',
+        'gambar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+    ]);
 
-            // Handle file upload
-            if ($request->hasFile('gambar')) {
-                $imageName = time().'.'.$request->gambar->extension();
-                $request->gambar->move(public_path('images/events'), $imageName);
-                $validatedData['gambar'] = $imageName;
-            }
+    if ($request->hasFile('gambar')) {
 
-            $event->update($validatedData);
-
-            return redirect()->route('admin.events.index')->with('success', 'Event berhasil diperbarui.');
-        } catch (\Exception $e) {
-            return redirect()->back()->withErrors(['error' => 'Terjadi kesalahan saat memperbarui event: ' . $e->getMessage()]);
+        // hapus gambar lama (opsional tapi bagus)
+        if ($event->gambar && Storage::disk('public')->exists($event->gambar)) {
+            Storage::disk('public')->delete($event->gambar);
         }
+
+        $path = $request->file('gambar')->store('events', 'public');
+        $validatedData['gambar'] = $path;
     }
+
+    $event->update($validatedData);
+
+    return redirect()
+        ->route('admin.events.index')
+        ->with('success', 'Event berhasil diperbarui.');
+}
+
 
     /**
      * Remove the specified resource from storage.
